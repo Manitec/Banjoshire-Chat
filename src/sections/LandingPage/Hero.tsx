@@ -72,6 +72,7 @@ export const LandingPageHero: React.FC<LandingPageHeroProps> = ({
         durationInMilliseconds={400}
       >
         <div className="hero-container">
+        <a class="hero-priv" href="https://joesfaves.com/privacy-banjoshire/"><span class="text-xl">Privacy Policy</span></a>
           <h1 className="hero-banner-text">IMAGINE A PLACE...</h1>
           <p className="hero-p">
             ...where you can belong to a school club, a gaming group, or a
