@@ -1,5 +1,14 @@
 {
-  "id": "Banjoshire-Chat-main",
-  "theme_color": "#0913f1",
-  "background_color": "#63bfea"
+  "display_override": [
+    "window-controls-overlay",
+    "standalone"
+  ],
+  "categories": [
+    "social"
+  ],
+  "name": "Banjoshire",
+  "theme_color": "#000000",
+  "background_color": "#000000",
+  "short_name": "Banjo",
+  "id": "'/"
 }
