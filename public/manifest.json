@@ -5,6 +5,7 @@
   "name": "Banjoshire",
   "short_name": "Banjo",
   "start_url": "https://banjo.joesfaves.com",
+  "id": "/",
   "display": "standalone",
   "description": "A social chat app similar to discord",
   "lang": "en",
@@ -46,3 +47,4 @@
     "social"
   ]
 }
+
