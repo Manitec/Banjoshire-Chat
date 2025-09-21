@@ -11,7 +11,5 @@ export default function Home() {
       <LandingPageHero />
   
     </>
-  );<script>
-    navigator.serviceWorker.register("public/sw.js")
-   </script>
+  );
 }
