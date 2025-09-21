@@ -18,7 +18,15 @@ export default function Document() {
           ></link>
             
         </Head>
-        <body><script>navigator.serviceWorker.register('sw.js')</script>
+        <body><script>
+    if ('serviceWorker' in navigator) {
+      window.onload = () => {
+        navigator.serviceWorker.register(
+          '/sw.js'
+        );
+      }
+    }
+  </script>
           <Main />
           <NextScript />
           </body>
