@@ -9,7 +9,11 @@ export default function Home() {
   return (
     <>
       <LandingPageHero />
-  
-    </>
+      <script>
+  if (typeof navigator.serviceWorker !== 'undefined') {
+    navigator.serviceWorker.register('sw.js')
+  }
+</script>
+   </>
   );
 }
