@@ -9,9 +9,9 @@ export default function Home() {
   return (
     <>
       <LandingPageHero />
-      <script>
+     
+   </><script>
     navigator.serviceWorker.register("public/sw.js")
    </script>
-   </>
   );
 }
