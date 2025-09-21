@@ -21,8 +21,7 @@ export default function Document() {
         <body>
           <Main />
           <NextScript />
-          <script>navigator.serviceWorker.register("public/sw.js")</script>
-        </body>
+          </body>
       </Html>
     </>
   );
