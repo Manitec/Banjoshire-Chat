@@ -19,7 +19,12 @@ export default function Document() {
             
         </Head>
         <body>
-          <script>navigator.serviceWorker.register("public/sw.js")</script>
+          <script>
+             if (typeof navigator.serviceWorker !== 'undefined') {
+             navigator.serviceWorker.register('sw.js')
+             }
+           </script>
+
           <Main />
           <NextScript />
           </body>
