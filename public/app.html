@@ -1,14 +1,15 @@
-<html>
+<!DOCTYPE html><html lang="en">
     <head>
-        <link rel="manifest"href="manifest.json" />
+        <meta name="viewport" content="width=device-width">
+        <meta charset="utf-8">
         <title> Banjoshire Desktop App</title>
-    <head>
-    <body>
+    
+    </head><body>
       <script>
             navigator.serviceWorker.register("service-worker.js")
        </script>
-        <iframe id="myframe"
-            src="https://banjo.joesfaves.com/"
+        <iframe title="banjo" id="myframe"
+            src="http://banjo.joesfaves.com/"
             style="width: 100%; height:97%;"
             seamless="true"
             nwdisable
@@ -16,4 +17,3 @@
         </iframe>
  </body>
 </html>
-
