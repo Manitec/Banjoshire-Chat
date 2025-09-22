@@ -5,7 +5,7 @@ export default function Document() {
     <>
       <Html lang="en">
         <Head>
-         <link rel="manifest" href="manifest.json"/>
+         <link rel="manifest" href="manifest.json" />
           <link rel="preconnect" href="https://fonts.googleapis.com" />
           <link
             rel="preconnect"
@@ -15,9 +15,8 @@ export default function Document() {
           <link
             href="https://fonts.googleapis.com/css2?family=Lilita+One&display=swap"
             rel="stylesheet"
-          ></link>
-            
-        </Head>
+          ></link>          
+       </Head>
         <body>
           <Main />
           <NextScript />
