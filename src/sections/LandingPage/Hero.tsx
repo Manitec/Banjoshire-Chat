@@ -1,26 +1,24 @@
 import { Navigation } from "collections";
 import { Button, Popup } from "components";
 import Image from "next/image";
-import React, { RefObject } from "react";
+import React, { RefObject, forwardRef } from "react";
 import { clouds, hero1, hero2, stars } from "assets";
 import { FadeIn } from "react-slide-fade-in";
 import { useAppDispatch, useAppSelector } from "hooks";
 import { togglePopup } from "services";
 
 interface LandingPageHeroProps {
-  ref?: RefObject<HTMLDivElement>;
+  // Remove ref here; handled via forwardRef
 }
 
 const buttons: string[] = ["Login", "Sign Up"];
 
-export const LandingPageHero: React.FC<LandingPageHeroProps> = ({
-  ...props
-}) => {
+export const LandingPageHero = forwardRef<HTMLDivElement, LandingPageHeroProps>((props, ref) => {
   const dispatch = useAppDispatch();
   const { popupOpened, userInfo } = useAppSelector((state) => state.counter);
 
   return (
-    <section className="w-full bg-heroBackground overflow-hidden" {...props}>
+    <section className="w-full bg-heroBackground overflow-hidden" ref={ref} {...props}>
       <Popup
         closePopup={() => dispatch(togglePopup("null"))}
         popupType={popupOpened || "null"}
@@ -33,7 +31,7 @@ export const LandingPageHero: React.FC<LandingPageHeroProps> = ({
       <Image
         src={clouds}
         alt={"cloudsImg"}
-        className={`left-[-2560px] animate-clouds absolute bottom-[80px] scale-[1.7] pointer-events-none hidden`}
+        className="left-[-2560px] animate-clouds absolute bottom-[80px] scale-[1.7] pointer-events-none hidden"
       />
       <Image
         src={stars}
@@ -72,6 +70,9 @@ export const LandingPageHero: React.FC<LandingPageHeroProps> = ({
         durationInMilliseconds={400}
       >
         <div className="hero-container">
+          <a className="hero-priv" href="https://joesfaves.com/privacy-banjoshire/">
+            <span className="text-xl">Privacy Policy</span>
+          </a>
           <h1 className="hero-banner-text">IMAGINE A PLACE...</h1>
           <p className="hero-p">
             ...where you can belong to a school club, a gaming group, or a
@@ -100,4 +101,5 @@ export const LandingPageHero: React.FC<LandingPageHeroProps> = ({
       </FadeIn>
     </section>
   );
-};
+});
+LandingPageHero.displayName = "LandingPageHero";

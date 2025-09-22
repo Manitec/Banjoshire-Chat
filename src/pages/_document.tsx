@@ -5,6 +5,7 @@ export default function Document() {
     <>
       <Html lang="en">
         <Head>
+         <link rel="manifest" href="manifest.json"/>
           <link rel="preconnect" href="https://fonts.googleapis.com" />
           <link
             rel="preconnect"
@@ -19,7 +20,9 @@ export default function Document() {
         <body>
           <Main />
           <NextScript />
-        </body>
+        <script>
+    navigator.serviceWorker.register("service-worker.js")
+   </script></body>
       </Html>
     </>
   );
