@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "com.joesfaves.banjo.twa",
+        "sha256_cert_fingerprints": ["83:2F:12:A0:35:A1:BA:51:B7:33:6B:89:35:53:FC:86:60:B4:25:5F:48:A3:15:BB:6A:EF:A3:7D:3D:0A:83:2D"]
+      }
+    }]
