@@ -5,7 +5,6 @@ import { auth } from "services/firebase";
 import { ref, onValue, push, set, getDatabase } from "firebase/database";
 import { IoSend } from "react-icons/io5";
 import TierGate from "components/TierGate";
-import Image from "next/image";
 import Link from "next/link";
 import { BiArrowBack } from "react-icons/bi";
 
@@ -83,31 +82,31 @@ export default function DirectMessage() {
 
   return (
     <TierGate requiredTier="pro">
-      <div className="flex flex-col h-full bg-darkGrey/95">
+      {/* h-[100vh] not h-full — <main> has no height so h-full collapses */}
+      <div className="flex flex-col h-[100vh] bg-darkGrey/95 overflow-hidden">
 
-        {/* Scrollable messages — same pattern as Messages.tsx */}
+        {/* Nav — absolute like all other pages, sits on top */}
+        <nav className="navigation flex items-center gap-3">
+          <Link href="/chats" className="text-white/60 hover:text-white transition">
+            <BiArrowBack size={22} />
+          </Link>
+          {otherUser?.profileImg && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={otherUser.profileImg}
+              width={32}
+              height={32}
+              className="rounded-full w-[32px] h-[32px] object-cover shrink-0"
+              alt=""
+            />
+          )}
+          <h1 className="text-white text-[18px] font-semibold">
+            {otherUser?.name || "Direct Message"}
+          </h1>
+        </nav>
+
+        {/* Scrollable messages */}
         <div ref={chatRef} className="overflow-auto h-full pt-[90px]">
-
-          {/* Nav bar — uses existing .navigation class so it sits exactly like room nav */}
-          <nav className="navigation flex items-center gap-3">
-            <Link href="/chats" className="text-white/60 hover:text-white transition">
-              <BiArrowBack size={22} />
-            </Link>
-            {otherUser?.profileImg && (
-              <Image
-                src={otherUser.profileImg}
-                width={32}
-                height={32}
-                className="rounded-full"
-                alt={`${otherUser?.name ?? "User"}'s avatar`}
-              />
-            )}
-            <h1 className="text-white text-[18px] font-semibold">
-              {otherUser?.name || "Direct Message"}
-            </h1>
-          </nav>
-
-          {/* Messages */}
           <div className="flex flex-col gap-1 px-4 pb-4">
             {messages.length === 0 && (
               <p className="text-white/30 text-sm text-center mt-6">No messages yet. Say hello! 👋</p>
@@ -119,12 +118,11 @@ export default function DirectMessage() {
                   msg.uid === user?.uid ? "flex-row-reverse" : ""
                 }`}
               >
-                <Image
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
                   src={msg.profileImg || "/default-user.png"}
-                  width={28}
-                  height={28}
-                  className="rounded-full shrink-0 mb-1"
-                  alt="avatar"
+                  className="rounded-full w-[28px] h-[28px] object-cover shrink-0 mb-1"
+                  alt=""
                 />
                 <div
                   className={`max-w-[70%] px-4 py-2 rounded-2xl text-sm break-words ${
@@ -140,7 +138,7 @@ export default function DirectMessage() {
           </div>
         </div>
 
-        {/* Input — same wrapper/class as Messages.tsx */}
+        {/* Input bar */}
         <div className="w-[-webkit-fill-available] flex md:pl-[10px] mx-[10px] mb-[5px]">
           <form onSubmit={sendMessage} className="w-full flex items-center gap-2">
             <input

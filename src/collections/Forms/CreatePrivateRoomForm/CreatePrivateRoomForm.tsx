@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { firebaseApi } from "services";
 import { icons } from "collections/Forms/CreateRoomForm/CreateRoomForm";
 import { TPopups } from "components";
-import { FaDiscourse } from "react-icons/fa";
 import { BiLock } from "react-icons/bi";
 
 interface CreatePrivateRoomFormProps {
@@ -47,19 +46,18 @@ const CreatePrivateRoomForm: React.FC<CreatePrivateRoomFormProps> = ({ closePopu
   };
 
   return (
+    /* sign-up-form keeps it as a single column and avoids the md:flex-row-reverse split */
     <form
-      className="form pt-[60px] md:max-w-[500px] md:pt-[20px] !overflow-visible"
+      className="sign-up-form !overflow-visible w-[90vw] max-w-[420px] rounded-2xl"
       onSubmit={handleSubmit}
     >
-      <div className="form-demo-info">
-        <FaDiscourse size={50} className="hidden md:block md:mb-[20px]" />
-        <h1 className="text-[18px] mb-1 md:mb-6 text-center flex items-center gap-2 justify-center">
-          <BiLock size={20} /> Create a Private Room
-        </h1>
-      </div>
+      {/* Header */}
+      <h1 className="text-[18px] mb-4 text-center flex items-center gap-2 justify-center font-semibold">
+        <BiLock size={20} /> Create a Private Room
+      </h1>
 
       {/* Icon selector */}
-      <div className="create-room-icon-container">
+      <div className="create-room-icon-container mb-2">
         <label className="form-label">Room Icon</label>
         <div className="create-room-icon">
           <RoomIcon size={35} fill="white" />
@@ -72,22 +70,18 @@ const CreatePrivateRoomForm: React.FC<CreatePrivateRoomFormProps> = ({ closePopu
         </div>
       </div>
 
-      {/* Icon grid — overflow-hidden when closed so h-0 actually clips */}
+      {/* Icon grid */}
       <div
-        className={`flex flex-wrap my-[10px] transition-all duration-500 items-start ${
+        className={`flex flex-wrap transition-all duration-500 ${
           iconsSelectorOpened
-            ? "overflow-auto h-[120px]"
-            : "overflow-hidden h-[0px] my-0"
+            ? "overflow-auto h-[120px] my-[10px]"
+            : "overflow-hidden h-0 my-0"
         }`}
       >
         {Object.keys(icons).map((ic) => {
           const Icon = icons[ic];
           return (
-            <div
-              key={ic}
-              onClick={handleChangeIcon(ic)}
-              className="room-icon-choice"
-            >
+            <div key={ic} onClick={handleChangeIcon(ic)} className="room-icon-choice">
               <Icon size={35} />
             </div>
           );
@@ -117,7 +111,7 @@ const CreatePrivateRoomForm: React.FC<CreatePrivateRoomFormProps> = ({ closePopu
       />
 
       {error && <span className="form-error">{error}</span>}
-      {success && <span className="form-error !text-green-500">Private Room Created! 🔒</span>}
+      {success && <span className="form-error !text-green-500">🔒 Private Room Created!</span>}
 
       <button
         className="w-full p-2 py-[10px] border-2 rounded-[10px] bg-black/90 text-white mt-[10px]"
