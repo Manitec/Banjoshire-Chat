@@ -1,6 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { stripe } from 'services/stripe';
-import { getAdminDb } from 'lib/firebase-admin';
 import Stripe from 'stripe';
 
 export const config = { api: { bodyParser: false } };
@@ -20,6 +19,21 @@ const getTier = (priceId: string): 'free' | 'pro' | 'agency' => {
   return 'free';
 };
 
+async function writeToFirebase(path: string, data: object) {
+  const dbUrl = process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL;
+  const secret = process.env.FIREBASE_DATABASE_SECRET;
+  if (!dbUrl || !secret) {
+    throw new Error(`Missing: ${!dbUrl ? 'NEXT_PUBLIC_FIREBASE_DATABASE_URL ' : ''}${!secret ? 'FIREBASE_DATABASE_SECRET' : ''}`);
+  }
+  const res = await fetch(`${dbUrl}/${path}.json?auth=${secret}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error(`Firebase REST ${res.status}: ${await res.text()}`);
+  return res.json();
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') return res.status(405).end();
 
@@ -27,7 +41,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     rawBody = await getRawBody(req);
   } catch (err: any) {
-    return res.status(400).json({ error: 'Failed to read request body' });
+    return res.status(400).json({ error: 'Failed to read body' });
   }
 
   const sig = req.headers['stripe-signature'] as string;
@@ -35,16 +49,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     event = stripe.webhooks.constructEvent(rawBody, sig, process.env.STRIPE_WEBHOOK_SECRET!);
   } catch (err: any) {
-    console.error('Webhook signature error:', err.message);
-    return res.status(400).json({ error: `Webhook signature error: ${err.message}` });
-  }
-
-  let adminDb: ReturnType<typeof getAdminDb>;
-  try {
-    adminDb = getAdminDb();
-  } catch (err: any) {
-    console.error('Firebase Admin init error:', err.message);
-    return res.status(500).json({ error: `Firebase Admin init failed: ${err.message}` });
+    console.error('Signature error:', err.message);
+    return res.status(400).json({ error: `Signature error: ${err.message}` });
   }
 
   try {
@@ -53,50 +59,52 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const session = event.data.object as Stripe.Checkout.Session;
         const userId = session.metadata?.userId;
         const customerId = session.customer as string;
-        console.log('checkout.session.completed — userId:', userId, 'customerId:', customerId);
+        console.log('checkout.session.completed — userId:', userId);
         if (userId) {
-          await adminDb.ref(`users/${userId}/subscription`).set({
+          await writeToFirebase(`users/${userId}/subscription`, {
             tier: 'pro',
             stripeCustomerId: customerId,
             updatedAt: Date.now(),
           });
-          console.log('✅ Wrote tier:pro for user', userId);
+          console.log('✅ Wrote tier:pro for', userId);
         }
         break;
       }
       case 'customer.subscription.updated': {
         const sub = event.data.object as Stripe.Subscription;
         const tier = getTier(sub.items.data[0].price.id);
-        const snapshot = await adminDb
-          .ref('users')
-          .orderByChild('subscription/stripeCustomerId')
-          .equalTo(sub.customer as string)
-          .once('value');
-        snapshot.forEach((child) => {
-          child.ref.child('subscription').update({ tier, updatedAt: Date.now() });
-        });
-        console.log('✅ Updated tier to', tier);
+        const dbUrl = process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL;
+        const secret = process.env.FIREBASE_DATABASE_SECRET;
+        const snapshot = await fetch(
+          `${dbUrl}/users.json?auth=${secret}&orderBy="subscription/stripeCustomerId"&equalTo="${sub.customer}"`
+        ).then(r => r.json());
+        if (snapshot) {
+          for (const uid of Object.keys(snapshot)) {
+            await writeToFirebase(`users/${uid}/subscription`, { tier, updatedAt: Date.now() });
+          }
+        }
         break;
       }
       case 'customer.subscription.deleted': {
         const sub = event.data.object as Stripe.Subscription;
-        const snapshot = await adminDb
-          .ref('users')
-          .orderByChild('subscription/stripeCustomerId')
-          .equalTo(sub.customer as string)
-          .once('value');
-        snapshot.forEach((child) => {
-          child.ref.child('subscription').update({ tier: 'free', updatedAt: Date.now() });
-        });
-        console.log('✅ Downgraded to free');
+        const dbUrl = process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL;
+        const secret = process.env.FIREBASE_DATABASE_SECRET;
+        const snapshot = await fetch(
+          `${dbUrl}/users.json?auth=${secret}&orderBy="subscription/stripeCustomerId"&equalTo="${sub.customer}"`
+        ).then(r => r.json());
+        if (snapshot) {
+          for (const uid of Object.keys(snapshot)) {
+            await writeToFirebase(`users/${uid}/subscription`, { tier: 'free', updatedAt: Date.now() });
+          }
+        }
         break;
       }
       default:
-        console.log('Unhandled event type:', event.type);
+        console.log('Unhandled event:', event.type);
     }
     return res.status(200).json({ received: true });
   } catch (err: any) {
-    console.error('Webhook handler error:', err.message);
+    console.error('Webhook error:', err.message);
     return res.status(500).json({ error: err.message });
   }
 }
