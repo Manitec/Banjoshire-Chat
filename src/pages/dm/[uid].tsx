@@ -48,7 +48,10 @@ export default function DirectMessage() {
     const msgsRef = ref(db, `dm/${roomId}`);
     const unsub = onValue(msgsRef, (snap) => {
       if (!snap.val()) { setMessages([]); return; }
-      setMessages(Object.values(snap.val()) as DmMessage[]);
+      const sorted = (Object.values(snap.val()) as DmMessage[]).sort(
+        (a, b) => a.timePosted - b.timePosted
+      );
+      setMessages(sorted);
     });
     return () => unsub();
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -77,9 +80,11 @@ export default function DirectMessage() {
 
   return (
     <TierGate requiredTier="pro">
-      <div className="flex flex-col h-[100vh] bg-[#1a1c2e] text-white">
-        {/* Header */}
-        <nav className="navigation flex items-center gap-3">
+      {/* Outer: full viewport, no overflow */}
+      <div className="flex flex-col bg-[#1a1c2e] text-white" style={{ height: "100dvh" }}>
+
+        {/* Header — fixed height */}
+        <nav className="navigation shrink-0 flex items-center gap-3">
           <Link href="/chats" className="text-white/60 hover:text-white transition">
             <BiArrowBack size={22} />
           </Link>
@@ -97,27 +102,32 @@ export default function DirectMessage() {
           </h1>
         </nav>
 
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-2">
+        {/* Messages — fills remaining space and scrolls */}
+        <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-2 min-h-0">
           {messages.length === 0 && (
             <p className="text-white/30 text-sm text-center mt-10">No messages yet. Say hello! 👋</p>
           )}
           {messages.map((msg) => (
-            <div key={msg.key} className={`flex items-start gap-3 ${
-              msg.uid === user?.uid ? "flex-row-reverse" : ""
-            }`}>
+            <div
+              key={msg.key}
+              className={`flex items-end gap-2 ${
+                msg.uid === user?.uid ? "flex-row-reverse" : ""
+              }`}
+            >
               <Image
                 src={msg.profileImg || "/default-user.png"}
-                width={32}
-                height={32}
-                className="rounded-full shrink-0"
+                width={28}
+                height={28}
+                className="rounded-full shrink-0 mb-1"
                 alt="avatar"
               />
-              <div className={`max-w-[70%] px-4 py-2 rounded-2xl text-sm ${
-                msg.uid === user?.uid
-                  ? "bg-indigo-600 rounded-tr-none"
-                  : "bg-slate-700 rounded-tl-none"
-              }`}>
+              <div
+                className={`max-w-[70%] px-4 py-2 rounded-2xl text-sm break-words ${
+                  msg.uid === user?.uid
+                    ? "bg-indigo-600 rounded-br-none"
+                    : "bg-slate-700 rounded-bl-none"
+                }`}
+              >
                 {msg.message}
               </div>
             </div>
@@ -125,8 +135,11 @@ export default function DirectMessage() {
           <div ref={bottomRef} />
         </div>
 
-        {/* Input */}
-        <form onSubmit={sendMessage} className="flex items-center gap-3 px-4 py-3 border-t border-white/10">
+        {/* Input — fixed at bottom */}
+        <form
+          onSubmit={sendMessage}
+          className="shrink-0 flex items-center gap-3 px-4 py-3 border-t border-white/10 bg-[#1a1c2e]"
+        >
           <input
             type="text"
             value={input}
@@ -137,7 +150,7 @@ export default function DirectMessage() {
           <button
             type="submit"
             disabled={!input.trim()}
-            className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 transition p-2 rounded-xl"
+            className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 transition p-2 rounded-xl shrink-0"
           >
             <IoSend size={18} />
           </button>

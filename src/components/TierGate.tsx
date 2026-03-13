@@ -15,7 +15,11 @@ export default function TierGate({ requiredTier, children, fallback, inline }: T
   const { tier, loading } = useSubscription();
   const router = useRouter();
 
-  if (loading) return <div className="animate-pulse bg-gray-700 rounded h-10 w-full" />;
+  // During loading: inline mode shows nothing (no layout shift), full mode shows slim bar
+  if (loading) {
+    if (inline) return null;
+    return <div className="animate-pulse bg-gray-700/40 rounded h-8 w-32" />;
+  }
 
   if (TIER_RANK[tier] >= TIER_RANK[requiredTier]) return <>{children}</>;
 
@@ -25,7 +29,7 @@ export default function TierGate({ requiredTier, children, fallback, inline }: T
     return (
       <button
         onClick={() => router.push('/upgrade')}
-        className="flex items-center gap-1 opacity-50 cursor-pointer text-white text-sm px-3 py-1 rounded-lg border border-purple-500 hover:opacity-80 transition"
+        className="flex items-center gap-1 opacity-60 cursor-pointer text-white text-sm px-3 py-1 rounded-lg border border-purple-500 hover:opacity-90 transition"
         title={`Upgrade to ${requiredTier} to unlock`}
       >
         🔒 {requiredTier.charAt(0).toUpperCase() + requiredTier.slice(1)}
