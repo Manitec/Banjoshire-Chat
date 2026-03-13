@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { auth, db } from '@/services/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { auth, database } from 'services/firebase';
+import { ref, onValue } from 'firebase/database';
 
 export type SubscriptionTier = 'free' | 'pro' | 'agency';
 
@@ -20,24 +20,32 @@ export function useSubscription(): Subscription {
   useEffect(() => {
     if (!user) {
       setTier('free');
+      setStripeCustomerId(null);
       setLoading(false);
       return;
     }
-    const fetchSub = async () => {
-      try {
-        const userDoc = await getDoc(doc(db, 'users', user.uid));
-        if (userDoc.exists()) {
-          const data = userDoc.data();
-          setTier(data.subscriptionTier || 'free');
+
+    const userRef = ref(database, `users/${user.uid}/subscription`);
+    const unsubscribe = onValue(
+      userRef,
+      (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          setTier(data.tier || 'free');
           setStripeCustomerId(data.stripeCustomerId || null);
+        } else {
+          setTier('free');
+          setStripeCustomerId(null);
         }
-      } catch (e) {
-        console.error('Subscription fetch error:', e);
-      } finally {
+        setLoading(false);
+      },
+      (error) => {
+        console.error('Subscription fetch error:', error);
         setLoading(false);
       }
-    };
-    fetchSub();
+    );
+
+    return () => unsubscribe();
   }, [user]);
 
   return { tier, stripeCustomerId, loading };
