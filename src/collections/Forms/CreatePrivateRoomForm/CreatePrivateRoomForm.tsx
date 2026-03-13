@@ -19,6 +19,11 @@ const CreatePrivateRoomForm: React.FC<CreatePrivateRoomFormProps> = ({ closePopu
 
   const RoomIcon = icons[icon];
 
+  const handleChangeIcon = (ic: string) => () => {
+    setIcon(ic);
+    setIconsSelectorOpened(false);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -43,7 +48,7 @@ const CreatePrivateRoomForm: React.FC<CreatePrivateRoomFormProps> = ({ closePopu
 
   return (
     <form
-      className="form pt-[60px] md:max-w-[500px] md:pt-[20px]"
+      className="form pt-[60px] md:max-w-[500px] md:pt-[20px] !overflow-visible"
       onSubmit={handleSubmit}
     >
       <div className="form-demo-info">
@@ -66,19 +71,21 @@ const CreatePrivateRoomForm: React.FC<CreatePrivateRoomFormProps> = ({ closePopu
           </div>
         </div>
       </div>
+
+      {/* Icon grid — overflow-hidden when closed so h-0 actually clips */}
       <div
-        className={
+        className={`flex flex-wrap my-[10px] transition-all duration-500 items-start ${
           iconsSelectorOpened
-            ? "room-icons-container"
-            : "room-icons-container h-[0px] transition-all duration-1000 my-0"
-        }
+            ? "overflow-auto h-[120px]"
+            : "overflow-hidden h-[0px] my-0"
+        }`}
       >
         {Object.keys(icons).map((ic) => {
           const Icon = icons[ic];
           return (
             <div
               key={ic}
-              onClick={() => { setIcon(ic); setIconsSelectorOpened(false); }}
+              onClick={handleChangeIcon(ic)}
               className="room-icon-choice"
             >
               <Icon size={35} />
@@ -110,7 +117,7 @@ const CreatePrivateRoomForm: React.FC<CreatePrivateRoomFormProps> = ({ closePopu
       />
 
       {error && <span className="form-error">{error}</span>}
-      {success && <span className="form-error text-green-500">Private Room Created! 🔒</span>}
+      {success && <span className="form-error !text-green-500">Private Room Created! 🔒</span>}
 
       <button
         className="w-full p-2 py-[10px] border-2 rounded-[10px] bg-black/90 text-white mt-[10px]"
