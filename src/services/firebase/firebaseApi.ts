@@ -58,7 +58,6 @@ const listenForNewMessages = async (room: string) => {
   const roomRef = ref(db, `messages/${room}`);
   onChildAdded(roomRef, (child) => {
     const message: IMessage = child.val();
-    // console.log(message.timePosted, Date.now());
   });
 };
 
@@ -82,53 +81,41 @@ const getUnreadMessages = async (
     } else {
       const data: IMessage[] = Object.values(msgs.val());
       const result = Object.values(data);
-      // Fixed a unexpected bug where after a client refresh
-      // the msgs.val() returns slug:{data} instead of just data
       const newMessages = result
         .filter((msg) => msg.timePosted > userLastSeen)
         .filter((msg) => msg.author !== auth.currentUser?.displayName);
       if (msgs.key === room) {
-        // updating the old state
         setter((oldState) => ({ ...oldState, [room]: newMessages.length }));
       }
     }
   });
-
-  // Returning the unsubscribe so i can detach from the old listeners
   return unsubscribe;
 };
 
 const changeStatus = async (status: string, username: string) => {
   const usersPathRef = ref(db, `users/${auth.currentUser?.uid}`);
-  update(usersPathRef, {
-    status,
-  });
+  update(usersPathRef, { status });
 };
 
 const changeUserAvatar = async (avatar: string) => {
   const usersPathRef = ref(db, `users/${auth.currentUser?.uid}`);
-  update(usersPathRef, {
-    profileImg: avatar,
-  });
+  update(usersPathRef, { profileImg: avatar });
 };
 
 const changeUserBanner = async (banner: string) => {
   const usersPathRef = ref(db, `users/${auth.currentUser?.uid}`);
-  update(usersPathRef, {
-    banner: banner,
-  });
+  update(usersPathRef, { banner });
 };
 
 const getUserStatus = async (
   setter: React.Dispatch<React.SetStateAction<Statuses>>
 ) => {
   const statusRef = ref(db, `users/${auth.currentUser?.uid}`);
-  onValue(statusRef, (status) => {
-    if (status.val() === null) {
+  onValue(statusRef, (snapshot) => {
+    if (!snapshot.val()) {
       setter("online");
     } else {
-      const value = status.val().status;
-      setter(value);
+      setter(snapshot.val().status || "online");
     }
   });
 };
@@ -151,10 +138,7 @@ const getUserInfo = async (
 const joinRoom = async (roomName: string) => {
   const roomMembersRef = ref(db, `rooms/${roomName}/members`);
   const newMember = push(roomMembersRef);
-  const key = newMember.key;
-  await set(newMember, {
-    user: auth.currentUser?.uid,
-  });
+  await set(newMember, { user: auth.currentUser?.uid });
   await sendMessage(
     roomName,
     `${auth.currentUser?.displayName} just joined ${roomName}`,
@@ -168,23 +152,16 @@ const createRoom = async (
 ): Promise<void | ErrorResponse> => {
   try {
     const doesExist = (await get(child(dbRef, `rooms/${roomName}`))).exists();
-
     if (doesExist) throw Error("Room already exists!");
-
     await set(ref(db, "rooms/" + roomName), {
       name: roomName,
       icon,
-      members: {
-        member: "",
-      },
+      members: { member: "" },
     });
     await joinRoom(roomName);
   } catch (error: any) {
     const FirbaseError: TError = error;
-    return {
-      type: "error",
-      error: FirbaseError,
-    };
+    return { type: "error", error: FirbaseError };
   }
 };
 
@@ -209,10 +186,7 @@ const sendMessage = async (
     });
   } catch (error: any) {
     const FirebaseError: TError = error;
-    return {
-      type: "error",
-      error: FirebaseError,
-    };
+    return { type: "error", error: FirebaseError };
   }
 };
 
@@ -226,12 +200,9 @@ const getMessages = async (
       setter([]);
     } else {
       const data = Object.values(msgs.val()) as any;
-      // Fixed a unexpected bug where after a client refresh
-      // the msgs.val() returns slug:{data} instead of just data
       if (msgs.key === roomName) {
         setter(Object.values(data));
       } else {
-        // console.log(Object.values(data));
         setter(Object.values(data[0]));
       }
     }
@@ -273,21 +244,14 @@ const createUserWithPassword = async (
   { email, password, username }: IEmailAndPasswordSignIn
 ): Promise<ErrorResponse | DataResponse> => {
   e.preventDefault();
-  //
   try {
     const res = await createUserWithEmailAndPassword(auth, email, password);
     await setAdditionUserInfo(username || "Anonymous User");
     await changeStatus("online", username || "Anonymous User");
-    return {
-      type: "data",
-      response: res,
-    };
+    return { type: "data", response: res };
   } catch (error: any) {
     const FirbaseError: TError = error;
-    return {
-      type: "error",
-      error: FirbaseError,
-    };
+    return { type: "error", error: FirbaseError };
   }
 };
 
@@ -311,29 +275,31 @@ const setAdditionUserInfo = async (username: string) => {
 const signInWithGoogle = async (): Promise<ErrorResponse | DataResponse> => {
   try {
     const res = await signInWithPopup(auth, provider);
-    await changeStatus(
-      "online",
-      auth.currentUser?.displayName || "Anonymous User"
-    );
-    const usersPathRef = ref(db, `users/${auth.currentUser?.uid}`);
-    set(usersPathRef, {
-      status: "online",
-      banner: banner_ai,
-      name: auth.currentUser?.displayName,
-      uid: auth.currentUser?.uid,
-      memberSince: auth.currentUser?.metadata.creationTime,
-      profileImg: auth.currentUser?.photoURL || defaultUser.src,
-    });
-    return {
-      type: "data",
-      response: res,
-    };
+    const uid = auth.currentUser?.uid;
+
+    // Check if user already exists — preserve their existing status/data
+    const existingSnap = await get(child(dbRef, `users/${uid}`));
+    if (!existingSnap.exists()) {
+      // First time Google sign-in — create the user record
+      const usersPathRef = ref(db, `users/${uid}`);
+      await set(usersPathRef, {
+        status: "online",
+        banner: banner_ai,
+        name: auth.currentUser?.displayName,
+        uid,
+        memberSince: auth.currentUser?.metadata.creationTime,
+        profileImg: auth.currentUser?.photoURL || defaultUser.src,
+      });
+    } else {
+      // Returning user — only update status to online, preserve everything else
+      const usersPathRef = ref(db, `users/${uid}`);
+      await update(usersPathRef, { status: "online" });
+    }
+
+    return { type: "data", response: res };
   } catch (error: any) {
     const FirbaseError: TError = error;
-    return {
-      type: "error",
-      error: FirbaseError,
-    };
+    return { type: "error", error: FirbaseError };
   }
 };
 
@@ -342,36 +308,33 @@ const signInWithPassword = async (
   { email, password }: IEmailAndPasswordSignIn
 ): Promise<ErrorResponse | DataResponse> => {
   e.preventDefault();
-
   try {
     const res = await signInWithEmailAndPassword(auth, email, password);
-    return {
-      type: "data",
-      response: res,
-    };
+    // Restore online status on sign-in
+    if (auth.currentUser?.uid) {
+      const usersPathRef = ref(db, `users/${auth.currentUser.uid}`);
+      await update(usersPathRef, { status: "online" });
+    }
+    return { type: "data", response: res };
   } catch (error: any) {
     const FirbaseError: TError = error;
-    return {
-      type: "error",
-      error: FirbaseError,
-    };
+    return { type: "error", error: FirbaseError };
   }
 };
 
 const signOut = async (): Promise<ErrorResponse | DataResponse<void>> => {
   try {
+    // Set offline before signing out
+    if (auth.currentUser?.uid) {
+      const usersPathRef = ref(db, `users/${auth.currentUser.uid}`);
+      await update(usersPathRef, { status: "invisible" });
+    }
     const res = await _signOut(auth);
     off(ref(db));
-    return {
-      type: "data",
-      response: res,
-    };
+    return { type: "data", response: res };
   } catch (error: any) {
     const FirbaseError: TError = error;
-    return {
-      type: "error",
-      error: FirbaseError,
-    };
+    return { type: "error", error: FirbaseError };
   }
 };
 
@@ -381,11 +344,7 @@ const editMessage = async (
   newMessage: string
 ) => {
   const messageRef = ref(db, `messages/${room}/${prevMessage.key}`);
-  update(messageRef, {
-    // ...prevMessage,
-    message: newMessage,
-    edited: true,
-  });
+  update(messageRef, { message: newMessage, edited: true });
 };
 
 const deleteMessage = async (room: string, messageKey: string) => {
@@ -402,11 +361,8 @@ const addEmoji = async (
     db,
     `messages/${room}/${message.key}/emojies/${emoji.unified}`
   );
-
   const emojiPath = `messages/${room}/${message.key}/emojies`;
-
   const emojiesValue = await get(child(ref(db), emojiPath));
-
   const newEmoji = push(emojiesRef);
   if (emojiesValue.val() === null) {
     await set(newEmoji, {
@@ -416,23 +372,15 @@ const addEmoji = async (
     });
     return;
   }
-
   const emojiType = emojiesValue.val()[emoji.unified] || false;
-
   if (emojiType) {
     const usersReacted: any[] = Object.values(emojiType);
     let alreadyReacted = false;
     usersReacted.map((emoji) => {
-      if (emoji.from === auth.currentUser?.uid) {
-        alreadyReacted = true;
-      }
+      if (emoji.from === auth.currentUser?.uid) alreadyReacted = true;
     });
-
-    if (alreadyReacted) {
-      return "You have already reacted with this emoji!";
-    }
+    if (alreadyReacted) return "You have already reacted with this emoji!";
   }
-
   await set(newEmoji, {
     icon: emoji.unified,
     from: auth.currentUser?.uid,
@@ -446,7 +394,6 @@ const reactWithEmoji = async (
   emoji: string
 ) => {
   const emojiRef = ref(db, `messages/${room}/${messageKey}/emojies/${emoji}`);
-
   const newEmoji = push(emojiRef);
   set(newEmoji, {
     from: auth.currentUser?.uid,
@@ -473,7 +420,6 @@ const getEmojis = async (
   setter: Dispatch<React.SetStateAction<IEmoji[]>>
 ) => {
   const emojisRef = ref(db, `messages/${room}/${message.key}/emojies`);
-
   onValue(emojisRef, (emojis) => {
     if (!emojis.val()) {
       setter([]);
@@ -484,9 +430,7 @@ const getEmojis = async (
           const key = emoji[0];
           const data = emoji[1];
           const structuredData = Object.values(data);
-          return {
-            emoji: structuredData,
-          };
+          return { emoji: structuredData };
         })
       );
     }
