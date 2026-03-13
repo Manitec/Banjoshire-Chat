@@ -3,11 +3,11 @@ import { useEffect, useRef, useState } from "react";
 import { useUser } from "contexts";
 import { auth } from "services/firebase";
 import { ref, onValue, push, set, getDatabase } from "firebase/database";
-import { BiArrowBack } from "react-icons/bi";
 import { IoSend } from "react-icons/io5";
 import TierGate from "components/TierGate";
 import Image from "next/image";
 import Link from "next/link";
+import { BiArrowBack } from "react-icons/bi";
 
 interface DmMessage {
   key: string;
@@ -29,8 +29,13 @@ export default function DirectMessage() {
   const [messages, setMessages] = useState<DmMessage[]>([]);
   const [otherUser, setOtherUser] = useState<any>(null);
   const [input, setInput] = useState("");
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const chatRef = useRef<HTMLDivElement>(null);
   const db = getDatabase();
+
+  const scrollToBottom = () => {
+    const height = chatRef.current?.scrollHeight || 0;
+    chatRef.current?.scroll(0, height);
+  };
 
   useEffect(() => {
     if (!uid) return;
@@ -52,14 +57,11 @@ export default function DirectMessage() {
         (a, b) => a.timePosted - b.timePosted
       );
       setMessages(sorted);
+      setTimeout(scrollToBottom, 50);
     });
     return () => unsub();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uid, user?.uid]);
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,85 +78,88 @@ export default function DirectMessage() {
       timePosted: Date.now(),
     });
     setInput("");
+    setTimeout(scrollToBottom, 50);
   };
 
   return (
     <TierGate requiredTier="pro">
-      {/* Outer: full viewport, no overflow */}
-      <div className="flex flex-col bg-[#1a1c2e] text-white" style={{ height: "100dvh" }}>
+      <div className="flex flex-col h-full bg-darkGrey/95">
 
-        {/* Header — fixed height */}
-        <nav className="navigation shrink-0 flex items-center gap-3">
-          <Link href="/chats" className="text-white/60 hover:text-white transition">
-            <BiArrowBack size={22} />
-          </Link>
-          {otherUser?.profileImg && (
-            <Image
-              src={otherUser.profileImg}
-              width={32}
-              height={32}
-              className="rounded-full"
-              alt={`${otherUser?.name ?? "User"}'s avatar`}
-            />
-          )}
-          <h1 className="text-white text-[18px] font-semibold">
-            {otherUser?.name || "Direct Message"}
-          </h1>
-        </nav>
+        {/* Scrollable messages — same pattern as Messages.tsx */}
+        <div ref={chatRef} className="overflow-auto h-full pt-[90px]">
 
-        {/* Messages — fills remaining space and scrolls */}
-        <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-2 min-h-0">
-          {messages.length === 0 && (
-            <p className="text-white/30 text-sm text-center mt-10">No messages yet. Say hello! 👋</p>
-          )}
-          {messages.map((msg) => (
-            <div
-              key={msg.key}
-              className={`flex items-end gap-2 ${
-                msg.uid === user?.uid ? "flex-row-reverse" : ""
-              }`}
-            >
+          {/* Nav bar — uses existing .navigation class so it sits exactly like room nav */}
+          <nav className="navigation flex items-center gap-3">
+            <Link href="/chats" className="text-white/60 hover:text-white transition">
+              <BiArrowBack size={22} />
+            </Link>
+            {otherUser?.profileImg && (
               <Image
-                src={msg.profileImg || "/default-user.png"}
-                width={28}
-                height={28}
-                className="rounded-full shrink-0 mb-1"
-                alt="avatar"
+                src={otherUser.profileImg}
+                width={32}
+                height={32}
+                className="rounded-full"
+                alt={`${otherUser?.name ?? "User"}'s avatar`}
               />
+            )}
+            <h1 className="text-white text-[18px] font-semibold">
+              {otherUser?.name || "Direct Message"}
+            </h1>
+          </nav>
+
+          {/* Messages */}
+          <div className="flex flex-col gap-1 px-4 pb-4">
+            {messages.length === 0 && (
+              <p className="text-white/30 text-sm text-center mt-6">No messages yet. Say hello! 👋</p>
+            )}
+            {messages.map((msg) => (
               <div
-                className={`max-w-[70%] px-4 py-2 rounded-2xl text-sm break-words ${
-                  msg.uid === user?.uid
-                    ? "bg-indigo-600 rounded-br-none"
-                    : "bg-slate-700 rounded-bl-none"
+                key={msg.key}
+                className={`flex items-end gap-2 ${
+                  msg.uid === user?.uid ? "flex-row-reverse" : ""
                 }`}
               >
-                {msg.message}
+                <Image
+                  src={msg.profileImg || "/default-user.png"}
+                  width={28}
+                  height={28}
+                  className="rounded-full shrink-0 mb-1"
+                  alt="avatar"
+                />
+                <div
+                  className={`max-w-[70%] px-4 py-2 rounded-2xl text-sm break-words ${
+                    msg.uid === user?.uid
+                      ? "bg-indigo-600 rounded-br-none"
+                      : "bg-slate-700 rounded-bl-none"
+                  }`}
+                >
+                  {msg.message}
+                </div>
               </div>
-            </div>
-          ))}
-          <div ref={bottomRef} />
+            ))}
+          </div>
         </div>
 
-        {/* Input — fixed at bottom */}
-        <form
-          onSubmit={sendMessage}
-          className="shrink-0 flex items-center gap-3 px-4 py-3 border-t border-white/10 bg-[#1a1c2e]"
-        >
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder={`Message ${otherUser?.name || "..."}`}
-            className="flex-1 bg-slate-700 rounded-xl px-4 py-2 text-white placeholder-white/40 outline-none text-[15px]"
-          />
-          <button
-            type="submit"
-            disabled={!input.trim()}
-            className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 transition p-2 rounded-xl shrink-0"
-          >
-            <IoSend size={18} />
-          </button>
-        </form>
+        {/* Input — same wrapper/class as Messages.tsx */}
+        <div className="w-[-webkit-fill-available] flex md:pl-[10px] mx-[10px] mb-[5px]">
+          <form onSubmit={sendMessage} className="w-full flex items-center gap-2">
+            <input
+              className="messenger flex-1"
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder={`Message ${otherUser?.name || "..."}`}
+            />
+            <button
+              type="submit"
+              disabled={!input.trim()}
+              className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 transition p-2 rounded-xl shrink-0"
+            >
+              <IoSend size={18} className="text-white" />
+            </button>
+          </form>
+        </div>
+
       </div>
     </TierGate>
   );
