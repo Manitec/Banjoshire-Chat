@@ -1,23 +1,41 @@
 import * as admin from 'firebase-admin';
 
-if (!admin.apps.length) {
-  try {
-    admin.initializeApp({
-      credential: admin.credential.cert({
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-      }),
-      databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL,
-    });
-    console.log('✅ Firebase Admin initialized');
-  } catch (error) {
-    console.error('❌ Firebase Admin initialization error:', error);
+let db: admin.database.Database | null = null;
+let auth: admin.auth.Auth | null = null;
+
+function getAdminApp() {
+  if (admin.apps.length) return admin.apps[0]!;
+
+  const projectId = process.env.FIREBASE_PROJECT_ID;
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+  const databaseURL = process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL;
+
+  if (!projectId || !clientEmail || !privateKey || !databaseURL) {
+    const missing = [
+      !projectId && 'FIREBASE_PROJECT_ID',
+      !clientEmail && 'FIREBASE_CLIENT_EMAIL',
+      !privateKey && 'FIREBASE_PRIVATE_KEY',
+      !databaseURL && 'NEXT_PUBLIC_FIREBASE_DATABASE_URL',
+    ].filter(Boolean);
+    throw new Error(`Missing Firebase Admin env vars: ${missing.join(', ')}`);
   }
+
+  return admin.initializeApp({
+    credential: admin.credential.cert({ projectId, clientEmail, privateKey }),
+    databaseURL,
+  });
 }
 
-export const adminAuth = admin.auth();
-export const adminDb = admin.database();
+export function getAdminDb(): admin.database.Database {
+  if (!db) db = getAdminApp().database();
+  return db;
+}
+
+export function getAdminAuth(): admin.auth.Auth {
+  if (!auth) auth = getAdminApp().auth();
+  return auth;
+}
 
 export async function setUserSubscription(
   userId: string,
@@ -26,11 +44,11 @@ export async function setUserSubscription(
 ) {
   const update: Record<string, any> = { tier, updatedAt: Date.now() };
   if (stripeCustomerId) update.stripeCustomerId = stripeCustomerId;
-  await adminDb.ref(`users/${userId}/subscription`).update(update);
+  await getAdminDb().ref(`users/${userId}/subscription`).update(update);
 }
 
 export async function getUserByStripeCustomerId(customerId: string) {
-  const snapshot = await adminDb
+  const snapshot = await getAdminDb()
     .ref('users')
     .orderByChild('subscription/stripeCustomerId')
     .equalTo(customerId)
