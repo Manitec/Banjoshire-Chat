@@ -34,17 +34,3 @@ export async function createPortalSession(customerId: string, returnUrl: string)
   });
   return session;
 }
-
-export async function getSubscriptionTier(customerId: string): Promise<'free' | 'pro' | 'agency'> {
-  if (!customerId) return 'free';
-  const subscriptions = await stripe.subscriptions.list({
-    customer: customerId,
-    status: 'active',
-    limit: 1,
-  });
-  if (!subscriptions.data.length) return 'free';
-  const priceId = subscriptions.data[0].items.data[0].price.id;
-  if (priceId === process.env.STRIPE_AGENCY_PRICE_ID) return 'agency';
-  if (priceId === process.env.STRIPE_PRO_PRICE_ID) return 'pro';
-  return 'free';
-}
