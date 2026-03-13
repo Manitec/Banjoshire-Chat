@@ -1,5 +1,6 @@
 import { FirebaseError } from "firebase/app";
-import { Statuses } from "types";
+
+export type TError = FirebaseError | Error;
 
 export interface IEmailAndPasswordSignIn {
   email: string;
@@ -7,57 +8,43 @@ export interface IEmailAndPasswordSignIn {
   username?: string;
 }
 
-export type TError = FirebaseError;
+export interface IMessage {
+  key: string;
+  author: string;
+  uid: string;
+  message: string;
+  profileImg: string;
+  edited: boolean;
+  timePosted: number;
+  greeting: boolean;
+  emojis: [];
+}
 
 export interface IRoom {
   name: string;
   icon: string;
-  members: {
-    [key: string]: { user: string };
-  };
+  members: { [key: string]: { user: string } };
+  private?: boolean;
+  password?: string;
 }
-
-export type GetAllRoomsResponse = {
-  [key: string]: {
-    name: string;
-    icon: string;
-    members: {
-      [key: string]: { user: string };
-    };
-  };
-};
-
-export type GetRoomResponse = {
-  [key: string]: {
-    user: string;
-  };
-};
 
 export interface IUserInfo {
-  memberSince: string;
-  name: string;
-  status: Statuses;
-  uid: string;
-  profileImg: string;
+  status: string;
   banner: string;
-  rooms: {
-    [key: string]: {
-      lastSeen: number;
-    };
-  };
-}
-
-export interface IMessage {
-  author: string;
-  message: string;
-  profileImg: string;
+  name: string;
   uid: string;
-  key: string;
-  timePosted: number;
-  edited: boolean;
-  greeting: boolean;
+  memberSince: string;
+  profileImg: string;
 }
 
 export interface INotifications {
   [key: string]: number;
 }
+
+export type GetAllRoomsResponse = {
+  [key: string]: IRoom;
+};
+
+export type GetRoomResponse = {
+  [key: string]: { user: string };
+};
