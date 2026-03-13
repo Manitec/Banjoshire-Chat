@@ -2,6 +2,7 @@ import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '@/services/firebase';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useRouter } from 'next/router';
+import Link from 'next/link';
 
 const plans = [
   {
@@ -82,7 +83,9 @@ export default function UpgradePage() {
           </div>
         ))}
       </div>
-      <p className="text-gray-500 text-xs mt-10">Powered by Manitec · <a href="/" className="underline">Back to Banjoshire</a></p>
+      <p className="text-gray-500 text-xs mt-10">
+        Powered by Manitec · <Link href="/" className="underline">Back to Banjoshire</Link>
+      </p>
     </div>
   );
 }

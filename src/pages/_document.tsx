@@ -21,7 +21,7 @@ export default function Document() {
           <Main />
           <NextScript />
         <script>
-    navigator.serviceWorker.register('service-worker.js')
+    navigator.serviceWorker.register(&apos;service-worker.js&apos;)
    </script></body>
       </Html>
     </>
