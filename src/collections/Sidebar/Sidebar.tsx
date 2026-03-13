@@ -35,12 +35,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
   useEffect(() => {
     if (rooms.length === 0) return;
     if (!user) return;
-    if (!user.rooms) return;
-    Object.keys(user.rooms).forEach((room) => {
+    const userRooms = user.rooms;
+    if (!userRooms) return;
+    Object.keys(userRooms).forEach((room) => {
       const unsubscribeFromLastListener = firebaseApi.GET.unreadMessages(
         room,
         setNewMessage,
-        user.rooms[room].lastSeen
+        userRooms[room].lastSeen
       );
       // No idea how it works but it does
       // It removes the old onValue listeners correctly
