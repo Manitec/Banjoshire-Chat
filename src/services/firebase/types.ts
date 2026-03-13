@@ -36,6 +36,7 @@ export interface IUserInfo {
   uid: string;
   memberSince: string;
   profileImg: string;
+  rooms?: { [roomName: string]: { lastSeen: number } };
 }
 
 export interface INotifications {
