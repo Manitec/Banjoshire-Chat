@@ -3,9 +3,10 @@ import { useEffect, useRef, useState } from "react";
 import { useUser } from "contexts";
 import { auth } from "services/firebase";
 import { ref, onValue, push, set, getDatabase } from "firebase/database";
-import { BiHash, BiArrowBack } from "react-icons/bi";
+import { BiArrowBack } from "react-icons/bi";
 import { IoSend } from "react-icons/io5";
 import TierGate from "components/TierGate";
+import Image from "next/image";
 import Link from "next/link";
 
 interface DmMessage {
@@ -38,6 +39,7 @@ export default function DirectMessage() {
       if (snap.val()) setOtherUser(snap.val());
     });
     return () => unsub();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uid]);
 
   useEffect(() => {
@@ -49,6 +51,7 @@ export default function DirectMessage() {
       setMessages(Object.values(snap.val()) as DmMessage[]);
     });
     return () => unsub();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uid, user?.uid]);
 
   useEffect(() => {
@@ -81,7 +84,13 @@ export default function DirectMessage() {
             <BiArrowBack size={22} />
           </Link>
           {otherUser?.profileImg && (
-            <img src={otherUser.profileImg} className="w-8 h-8 rounded-full" alt="avatar" />
+            <Image
+              src={otherUser.profileImg}
+              width={32}
+              height={32}
+              className="rounded-full"
+              alt={`${otherUser?.name ?? "User"}'s avatar`}
+            />
           )}
           <h1 className="text-white text-[18px] font-semibold">
             {otherUser?.name || "Direct Message"}
@@ -97,7 +106,13 @@ export default function DirectMessage() {
             <div key={msg.key} className={`flex items-start gap-3 ${
               msg.uid === user?.uid ? "flex-row-reverse" : ""
             }`}>
-              <img src={msg.profileImg} className="w-8 h-8 rounded-full shrink-0" alt="avatar" />
+              <Image
+                src={msg.profileImg || "/default-user.png"}
+                width={32}
+                height={32}
+                className="rounded-full shrink-0"
+                alt="avatar"
+              />
               <div className={`max-w-[70%] px-4 py-2 rounded-2xl text-sm ${
                 msg.uid === user?.uid
                   ? "bg-indigo-600 rounded-tr-none"

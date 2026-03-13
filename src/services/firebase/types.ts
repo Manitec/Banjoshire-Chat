@@ -1,4 +1,5 @@
 import { FirebaseError } from "firebase/app";
+import { Statuses } from "types";
 
 export type TError = FirebaseError | Error;
 
@@ -29,7 +30,7 @@ export interface IRoom {
 }
 
 export interface IUserInfo {
-  status: string;
+  status: Statuses;
   banner: string;
   name: string;
   uid: string;

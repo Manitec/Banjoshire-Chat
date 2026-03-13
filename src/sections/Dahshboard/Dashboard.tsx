@@ -98,7 +98,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ ...props }) => {
         </div>
         <div className="dashboard-info">
           <h3 className="dashboard-greeting-info">Click on a room to join the conversation!</h3>
-          {/* Room Search */}
           <div className="flex items-center bg-slate-700/50 rounded-lg px-3 py-2 mb-4 max-w-[400px] mx-auto">
             <BiSearch size={18} className="text-white/50 mr-2 shrink-0" />
             <input
@@ -111,7 +110,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ ...props }) => {
           </div>
           <div className="dashboard-rooms-container">
             {filteredRooms.length === 0 && search && (
-              <p className="text-white/50 text-sm mt-4">No rooms match "{search}"</p>
+              <p className="text-white/50 text-sm mt-4">No rooms match &ldquo;{search}&rdquo;</p>
             )}
             {filteredRooms.map((room, i) => {
               const Icon = icons[room.icon];
